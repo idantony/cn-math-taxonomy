@@ -82,7 +82,7 @@
     art.appendChild(head);
     art.appendChild(el('p', 'kid-meta', c.grade + ' · ' + c.textbook));
     art.appendChild(el('p', 'kid-stat', st.runs
-      ? '已诊断 ' + st.runs + ' 次，目前有 ' + st.weak + ' 个薄弱知识点'
+      ? '共 ' + st.runs + ' 份历史记录；新规则直接检查中有 ' + st.weak + ' 个本次受阻项（旧规则不计入）'
       : '还没有诊断记录'));
     var row = el('div', 'kid-actions');
     if (!isCurrent) {

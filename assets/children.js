@@ -137,6 +137,9 @@
       var put = function (ids, status) {
         (ids || []).forEach(function (id) { by[id] = { status: status, recKey: r.key, at: r.savedAt, label: r.label, root: !!roots[id], subject: r.subject }; });
       };
+      // Older records inferred ancestors from a single answer. Keep their history,
+      // but do not mix those inferred labels with the new direct-evidence summary.
+      if (r.policy !== 'evidence-v1') return;
       put(r.mastered, 'mastered');
       put(r.shaky, 'shaky');
       put(r.weak, 'weak');

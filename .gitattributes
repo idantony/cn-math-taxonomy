@@ -1,0 +1,5 @@
+# Preserve vendored OCR files byte-for-byte for manifest checksums.
+assets/vendor/ocr/** -text
+assets/vendor/ocr/manifest.json text eol=lf
+# Retain upstream license formatting.
+assets/vendor/ocr/*LICENSE* whitespace=-blank-at-eof

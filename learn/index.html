@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>开始学习 · 知识图谱</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="top">
+        <a class="brand" href="../">中小学 · 知识图谱</a>
+        <nav aria-label="主导航">
+          <a href="../">首页</a><a href="../explore/">图谱</a
+          ><a href="../diagnose/">诊断</a
+          ><a href="./" aria-current="page">学习</a>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <div class="hero">
+        <div>
+          <span class="eyebrow">从你正在做的题开始</span>
+          <h1>把卡住的地方，练明白。</h1>
+          <p>
+            带来一道错题，或者选一章。先自己试，再看帮助，最后换一道题检查。
+          </p>
+        </div>
+        <label
+          >当前学科<select id="subject">
+            <option value="math">数学</option>
+            <option value="chinese">语文</option>
+            <option value="english">英语</option>
+            <option value="physics">物理</option>
+          </select></label
+        >
+      </div>
+      <div id="identity" class="note"></div>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <div id="root"><p>正在读取本地题库…</p></div>
+      <footer>
+        题库为 AI
+        生成初稿，未经教师全面审核。自动评分可更正。文字与图片只在本机处理，不远程上传。<a
+          href="../docs/learning-science-review-2026-10-26.md"
+          >设计依据与局限</a
+        >
+      </footer>
+    </main>
+    <script src="../assets/children.js"></script>
+    <script src="../diagnose/engine.js"></script>
+    <script src="model.js"></script>
+    <script src="ocr.js"></script>
+    <script src="app.js"></script>
+    <script src="../assets/pwa.js"></script>
+  </body>
+</html>

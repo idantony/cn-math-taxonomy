@@ -42,8 +42,8 @@
     var a = el('a', 'wk-name', nameOf(id));
     a.href = exploreHref(id);
     top.appendChild(a);
-    top.appendChild(tag(info.status === 'weak' ? 'weak' : 'shaky', info.status === 'weak' ? '薄弱' : '不稳'));
-    if (info.root) top.appendChild(tag('root', '根因'));
+    top.appendChild(tag(info.status === 'weak' ? 'weak' : 'shaky', info.status === 'weak' ? '本次受阻' : '待巩固'));
+    if (info.root) top.appendChild(tag('root', '检查线索'));
     top.appendChild(tag('sub', SUBJECT_NAME[subjectOfId(id)]));
     li.appendChild(top);
     var meta = [];
@@ -66,16 +66,16 @@
     });
     var sec = el('section', 'kid-section');
     var weakN = ids.filter(function (id) { return by[id].status === 'weak'; }).length;
-    sec.appendChild(el('h2', null, '现在还薄弱的知识点'));
+    sec.appendChild(el('h2', null, '最近检查中需要巩固的知识点'));
     if (!CC.recordsOf(child.id).length) {
       sec.appendChild(el('p', 'kid-empty', '还没有诊断记录。做完一次诊断，薄弱点会汇总在这里。'));
       return sec;
     }
     if (!ids.length) {
-      sec.appendChild(el('p', 'kid-empty', '按最近的诊断结果，没有薄弱或不稳的知识点。'));
+      sec.appendChild(el('p', 'kid-empty', '新规则的直接检查记录中暂无受阻或待巩固项；旧记录保留在下方，不计入这里。'));
       return sec;
     }
-    sec.appendChild(el('p', 'muted small', '同一个知识点测过好几次，以最近一次为准。薄弱 ' + weakN + ' 个，不稳 ' + (ids.length - weakN) + ' 个。点名称进知识图谱看先修和学习内容。'));
+    sec.appendChild(el('p', 'muted small', '仅汇总新规则的直接检查记录，以最近一次为准。本次受阻 ' + weakN + ' 个，待巩固 ' + (ids.length - weakN) + ' 个。点名称进知识图谱看先修和学习内容。'));
     var ul = el('ul', 'wk-list');
     ids.forEach(function (id) { ul.appendChild(topicRow(id, by[id])); });
     sec.appendChild(ul);
@@ -87,15 +87,16 @@
     var sum = el('summary');
     var line1 = el('div', 'rec-top');
     line1.appendChild(tag('sub', SUBJECT_NAME[r.subject] || '数学'));
+    if (r.policy !== 'evidence-v1') line1.appendChild(tag('sub', '旧规则记录'));
     line1.appendChild(el('b', 'rec-label', r.label || '诊断'));
     sum.appendChild(line1);
     var c = r.counts || {};
     var line2 = el('div', 'rec-counts');
     line2.appendChild(el('span', 'rec-date', fmt(r.savedAt)));
-    line2.appendChild(tag('weak', '薄弱 ' + (c.weak || 0)));
-    line2.appendChild(tag('shaky', '不稳 ' + (c.shaky || 0)));
-    line2.appendChild(tag('ok', '掌握 ' + (c.mastered || 0)));
-    if (c.untested) line2.appendChild(tag('unk', '未测 ' + c.untested));
+    line2.appendChild(tag('weak', '本次受阻 ' + (c.weak || 0)));
+    line2.appendChild(tag('shaky', '待巩固 ' + (c.shaky || 0)));
+    line2.appendChild(tag('ok', (r.policy === 'evidence-v1' ? '本次通过 ' : '旧版掌握/推断 ') + (c.mastered || 0)));
+    if (c.untested) line2.appendChild(tag('unk', '未验证 ' + c.untested));
     sum.appendChild(line2);
     det.appendChild(sum);
 
@@ -112,13 +113,13 @@
         var a = el('a', null, nameOf(id));
         a.href = exploreHref(id);
         li.appendChild(a);
-        if (status === 'weak' && rootSet[id]) li.appendChild(tag('root', '根因'));
+        if (status === 'weak' && rootSet[id]) li.appendChild(tag('root', '检查线索'));
         ul.appendChild(li);
       });
       body.appendChild(ul);
     };
-    group('薄弱', r.weak, 'weak');
-    group('不稳', r.shaky, 'shaky');
+    group(r.policy === 'evidence-v1' ? '本次受阻' : '旧版薄弱', r.weak, 'weak');
+    group(r.policy === 'evidence-v1' ? '待巩固' : '旧版不稳', r.shaky, 'shaky');
     if (!(r.weak || []).length && !(r.shaky || []).length) body.appendChild(el('p', 'kid-empty', '这次没有发现薄弱或不稳的知识点。'));
 
     var row = el('div', 'rec-actions');

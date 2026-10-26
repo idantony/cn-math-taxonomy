@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/test_engine.js && node tests/test_evidence.js && node tests/test_learning.js && node tests/test_diagnose_storage.js"
   },
   "repository": {
     "type": "git",
@@ -16,7 +16,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "CC-BY-NC-4.0",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/xiaoyang111222/cn-math-taxonomy/issues"

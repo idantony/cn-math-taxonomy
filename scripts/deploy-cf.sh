@@ -15,6 +15,10 @@ cp -a "$ROOT/assets" "$DIST/"
 cp -a "$ROOT/explore" "$DIST/"
 cp -a "$ROOT/diagnose" "$DIST/"
 cp -a "$ROOT/children" "$DIST/"
+cp -a "$ROOT/learn" "$DIST/"
+rm -f "$DIST/learn/README.md"
+mkdir -p "$DIST/docs"
+cp "$ROOT/docs/learning-science-review-2026-10-26.md" "$DIST/docs/"
 rm -f "$DIST/diagnose/README.md"
 cp "$ROOT/data/topics.json" \
    "$ROOT/data/dependencies.json" \

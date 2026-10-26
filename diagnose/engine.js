@@ -14,8 +14,8 @@
  *         judgeQuestion(question, userText) -> {verdict:'correct'|'wrong'|'manual', reason}
  *         judgeAnswer(user, reference) -> 同上（只按参考答案文本判，旧接口）
  *
- * 每个知识点最多 2 题：第一题对 -> 掌握（并推断祖先掌握）；第一题错 / 不会 -> 再出一道同级或更容易的题：
- *   第二题对 -> 不稳（shaky，不向先修回溯）；第二题也错 -> 薄弱（weak，向先修回溯，hard 先于 soft）。
+ * 默认 evidence-v1：每点最多三道不同题，两次独立正确为本次通过；两次错/跳过为本次受阻。
+ * 证据不足保持 unknown，不向祖先传播，仅回溯 hard。显式 legacy-v2 保留历史双题规则。
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) module.exports = factory();
@@ -147,6 +147,8 @@
 
   function createSession(graph, targets, opts) {
     opts = opts || {};
+    const policy = opts.policy == null ? 'evidence-v1' : opts.policy;
+    if (policy !== 'evidence-v1' && policy !== 'legacy-v2') throw new Error('Unknown policy: ' + policy);
     const ts = Array.from(new Set(targets));
     if (!ts.length) throw new Error('至少需要一个目标知识点');
     ts.forEach(function (id) { if (!graph.byId[id]) throw new Error('未知知识点：' + id); });
@@ -160,7 +162,7 @@
     const stack = ts.filter(function (id) { return isTestable(graph, id); })
       .sort(function (a, b) { return pos[b] - pos[a]; });
     return {
-      targets: ts, limit: limit, order: sub.nodes, status: {}, stack: stack, answers: [], attempts: {},
+      policy: policy, targets: ts, limit: limit, order: sub.nodes, status: {}, stack: stack, answers: [], attempts: {},
       mode: screen ? 'screen' : 'target', scope: screen ? ts.slice() : null,
       seed: opts.seed == null ? 'default' : String(opts.seed),
       avoid: Array.from(new Set(opts.avoid || []))
@@ -171,7 +173,7 @@
     const attempts = {};
     Object.keys(s.attempts).forEach(function (k) { attempts[k] = s.attempts[k].slice(); });
     return {
-      targets: s.targets.slice(), limit: s.limit, order: s.order, stack: s.stack.slice(),
+      policy: s.policy || 'legacy-v2', targets: s.targets.slice(), limit: s.limit, order: s.order, stack: s.stack.slice(),
       status: Object.assign({}, s.status), answers: s.answers.slice(), attempts: attempts,
       seed: s.seed, avoid: s.avoid, mode: s.mode, scope: s.scope ? s.scope.slice() : null
     };
@@ -220,7 +222,12 @@
       return f.length ? f : list;
     };
     let cand;
-    if (attempt <= 1) {
+    if (session.policy === 'evidence-v1') {
+      const hadStandard = all.some(function (q) { return tried.indexOf(q.id) >= 0 && rankOf(q) === 1; });
+      const standard = pool.filter(function (q) { return rankOf(q) === 1; });
+      const nonAdv = pool.filter(function (q) { return rankOf(q) < 2; });
+      cand = freshFirst(!hadStandard && standard.length ? standard : nonAdv.length ? nonAdv : pool);
+    } else if (attempt <= 1) {
       cand = freshFirst(pool);
       const nonAdv = cand.filter(function (q) { return rankOf(q) < 2; });
       if (nonAdv.length) cand = nonAdv;
@@ -252,6 +259,7 @@
    * 直接作答（direct）的判定不会被推断（inferred）覆盖。extra.text 是用户输入的答案（只用于记录）。
    */
   function applyAnswer(graph, session, id, result, extra) {
+    if (session.policy === 'evidence-v1') return applyEvidence(graph, session, id, result, extra);
     if (!RESULTS[result]) throw new Error('作答结果必须是 correct / wrong / skip');
     if (!graph.byId[id]) throw new Error('未知知识点：' + id);
     const s = cloneSession(session);
@@ -259,6 +267,8 @@
     const prev = s.attempts[id] || [];
     const q = pickQuestion(graph, s, id, prev.length + 1);
     const rec = { id: id, qid: q ? q.id : null, result: result };
+    if (extra && extra.support != null) rec.support = extra.support;
+    if (extra && extra.at != null) rec.at = extra.at;
     if (extra && extra.text != null && extra.text !== '') rec.text = String(extra.text);
     s.answers.push(rec);
     s.attempts[id] = prev.concat([{ qid: rec.qid, result: result }]);
@@ -286,11 +296,62 @@
     return s;
   }
 
+  function evidenceCounts(attempts) {
+    return {
+      independent: attempts.filter(function (a) { return a.result === 'correct' && (!a.support || a.support === 'independent'); }).length,
+      failures: attempts.filter(function (a) { return a.result !== 'correct'; }).length,
+      helped: attempts.filter(function (a) { return a.result === 'correct' && a.support && a.support !== 'independent'; }).length
+    };
+  }
+
+  function applyEvidence(graph, session, id, result, extra) {
+    extra = extra || {};
+    if (!RESULTS[result]) throw new Error('Invalid answer result');
+    if (!graph.byId[id]) throw new Error('Unknown topic: ' + id);
+    if (!extra._replay && nextQuestion(graph, session) !== id) throw new Error('Answer is out of order: ' + id);
+    const prev = session.attempts[id] || [];
+    if ((!extra._replay && session.status[id] && session.status[id].complete) || prev.length >= 3) throw new Error('Topic already completed: ' + id);
+    const q = extra.qid ? questionById(graph, extra.qid) : pickQuestion(graph, session, id, prev.length + 1);
+    if (!q || q.topicId !== id || prev.some(function (a) { return a.qid === q.id; })) throw new Error('Invalid or duplicate question');
+    const support = extra.support == null ? 'independent' : extra.support;
+    if (['independent', 'hint', 'solution'].indexOf(support) < 0) throw new Error('Unknown support: ' + support);
+    const s = cloneSession(session);
+    const rec = Object.assign({}, extra, { id: id, qid: q.id, result: result, support: support });
+    delete rec._replay;
+    if (rec.text != null) rec.text = String(rec.text);
+    s.answers.push(rec);
+    s.attempts[id] = prev.concat([Object.assign({}, rec)]);
+    const c = evidenceCounts(s.attempts[id]);
+    const exhausted = s.attempts[id].length >= 3 || !pickQuestion(graph, s, id, s.attempts[id].length + 1);
+    let state = null;
+    if (c.independent >= 2) state = 'mastered';
+    else if (c.failures >= 2) state = 'weak';
+    else if (c.helped || (exhausted && s.attempts[id].length >= 2)) state = 'shaky';
+    if (state) s.status[id] = { s: state, src: 'direct', complete: state !== 'shaky' || exhausted };
+    if (state === 'weak' || (state === 'shaky' && exhausted)) {
+      const scope = s.scope ? new Set(s.scope) : null;
+      const push = graph.prereqs[id].filter(function (p) {
+        return p.strength === 'hard' && isTestable(graph, p.id) && statusOf(s, p.id) !== 'mastered' &&
+          !(s.status[p.id] && s.status[p.id].complete) && (!scope || scope.has(p.id));
+      }).map(function (p) { return p.id; });
+      const pushed = new Set(push);
+      s.stack = push.concat(s.stack.filter(function (x) { return !pushed.has(x); }));
+    }
+    return s;
+  }
+
+  function canAsk(graph, session, id) {
+    if (!isTestable(graph, id)) return false;
+    if (session.policy !== 'evidence-v1') return !session.status[id];
+    const a = session.attempts[id] || [];
+    return !(session.status[id] && session.status[id].complete) && a.length < 3 && !!pickQuestion(graph, session, id, a.length + 1);
+  }
+
   function nextQuestion(graph, session) {
     if (session.answers.length >= session.limit) return null;
     for (let i = 0; i < session.stack.length; i++) {
       const id = session.stack[i];
-      if (!session.status[id] && isTestable(graph, id)) return id;
+      if (canAsk(graph, session, id)) return id;
     }
     return null;
   }
@@ -306,7 +367,7 @@
   /** 由作答记录重建会话（用于刷新恢复、撤销、更正）。 */
   function replay(graph, targets, answers, opts) {
     let s = createSession(graph, targets, opts);
-    answers.forEach(function (a) { s = applyAnswer(graph, s, a.id, a.result, { text: a.text }); });
+    answers.forEach(function (a) { s = applyAnswer(graph, s, a.id, a.result, Object.assign({}, a, { _replay: true })); });
     return s;
   }
 
@@ -314,12 +375,13 @@
   function statusOf(session, id) {
     const st = session.status[id];
     if (st) return st.s;
-    return isUnconfirmed(session, id) ? 'weak' : 'unknown';
+    return session.policy !== 'evidence-v1' && isUnconfirmed(session, id) ? 'weak' : 'unknown';
   }
 
   /** 第一题答错、但没来得及出第二题（题量用完）的点。 */
   function isUnconfirmed(session, id) {
     const a = session.attempts[id];
+    if (session.policy === 'evidence-v1') return !!a && a.length > 0 && (!session.status[id] || session.status[id].complete === false);
     return !session.status[id] && !!a && a.length === 1 && a[0].result !== 'correct';
   }
 
@@ -331,15 +393,15 @@
     const mastered = nodes.filter(function (id) { return st(id) === 'mastered'; });
     const shaky = nodes.filter(function (id) { return st(id) === 'shaky'; });
     const weak = nodes.filter(function (id) { return st(id) === 'weak'; });
-    const unconfirmed = weak.filter(function (id) { return isUnconfirmed(session, id); });
+    const unconfirmed = nodes.filter(function (id) { return isUnconfirmed(session, id); });
     const untested = nodes.filter(function (id) { return st(id) === 'unknown'; });
     const scope = session.scope ? new Set(session.scope) : null;
     const inScope = function (id) { return !scope || scope.has(id); };
 
     const roots = weak.filter(function (id) {
-      return !graph.prereqs[id].some(function (p) { return st(p.id) === 'weak'; });
+      return !graph.prereqs[id].some(function (p) { return (session.policy !== 'evidence-v1' || p.strength === 'hard') && st(p.id) === 'weak'; });
     }).map(function (id) {
-      const unk = graph.prereqs[id].filter(function (p) { return st(p.id) === 'unknown'; });
+      const unk = graph.prereqs[id].filter(function (p) { return (session.policy !== 'evidence-v1' || p.strength === 'hard') && st(p.id) === 'unknown'; });
       const testableUnk = unk.filter(function (p) { return isTestable(graph, p.id); });
       return {
         id: id,
@@ -360,7 +422,7 @@
     while (queue.length) {
       const id = queue.shift();
       graph.dependents[id].forEach(function (d) {
-        if (inSub.has(d.id) && !reach.has(d.id)) { reach.add(d.id); queue.push(d.id); }
+        if ((session.policy !== 'evidence-v1' || d.strength === 'hard') && inSub.has(d.id) && !reach.has(d.id)) { reach.add(d.id); queue.push(d.id); }
       });
     }
     const rootSet = new Set(roots.map(function (r) { return r.id; }));
@@ -376,10 +438,13 @@
       return gradeRank(graph, a.id) - gradeRank(graph, b.id) || topoPos[a.id] - topoPos[b.id];
     });
 
-    const pending = session.stack.filter(function (id) { return !session.status[id] && isTestable(graph, id); });
+    const pending = session.stack.filter(function (id) { return canAsk(graph, session, id); });
     const next = nextQuestion(graph, session);
     return {
       mode: session.mode || 'target',
+      policy: session.policy || 'legacy-v2',
+      pendingEvidence: unconfirmed.slice(),
+      helped: nodes.filter(function (id) { return evidenceCounts(session.attempts[id] || []).helped > 0; }),
       targets: session.targets.slice(),
       asked: session.answers.length,
       limit: session.limit,

@@ -35,7 +35,6 @@
 <link rel="stylesheet" href="assets/pwa.css">
 </head>
 <body class="page-home">
-<a class="top-banner" href="https://test.pansgo.com/?from=math-top" target="_blank" rel="noopener">🧠 儿童智商测试</a>
 <header class="site-header">
   <a class="brand" href="./">
     <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><path fill="var(--logo-sheet)" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M6.6 4.8H17L27.4 15.2V25Q27.4 27.4 25.2 27.4H6.6Q4.4 27.4 4.4 25.2V7Q4.4 4.8 6.6 4.8Z"/><path fill="var(--logo-fold)" d="M17.7 6.3 26.1 14.7H17.7Z"/><path fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" d="M17.7 6.3V14.7H26.1"/><path fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" d="M8.3 24.2H12.4Q14.2 24.2 14.2 22.4V20.2Q14.2 18.6 16 18.6H18.8"/><path fill="currentColor" d="M18.5 16.85 23 18.6 18.5 20.35Z"/></svg>
@@ -54,6 +53,7 @@
     <div class="page-links">
       <a class="nav-link active" href="./" aria-current="page">首页</a>
       <a class="nav-link" href="explore/">知识图谱</a>
+      <a class="nav-link" href="learn/">学习</a>
       <a class="nav-link" href="diagnose/">诊断</a>
       <a class="nav-link" href="children/">档案</a>
       <a class="nav-link" href="https://github.com/xiaoyang111222/cn-math-taxonomy" target="_blank" rel="noopener noreferrer">关于</a>
@@ -66,10 +66,10 @@
 <main class="home">
   <section class="hero">
     <p class="eyebrow">数学：小学到高中 · 语文：小学一至六年级 · 英语：三年级到高中 · 物理：初中到高中</p>
-    <h1>先找到真正没学会的那一步</h1>
-    <p class="lede">沿着先修关系自适应出题。数学从小学追到高中，语文覆盖统编版小学一至六年级，英语覆盖三年级到高中，物理覆盖初中八、九年级和高中必修、选择性必修。从你选的知识点往回追，定位薄弱根因，并给出一条按学习顺序排起的路径。</p>
+    <h1>从今天卡住的题，走到下一次独立做对</h1>
+    <p class="lede">带上一道错题，或选择正在学的章节。核对题目、确认相关知识点，按需查看帮助，再用不同题目独立检查。记录每次作答与后续复查，让进步有迹可查。</p>
     <div class="hero-actions">
-      <a class="btn btn-primary btn-lg" href="diagnose/">开始诊断</a>
+      <a class="btn btn-primary btn-lg" href="learn/">从错题或章节开始</a>
       <a class="btn btn-lg" href="explore/">浏览知识图谱</a>
     </div>
     <p class="quiet-link"><a href="diagnose/?target=cnm_221&amp;demo=1">先看一遍演示：配方法</a></p>
@@ -79,18 +79,18 @@
   <ol class="steps">
     <li>
       <span class="step-no">1</span>
-      <h3>选知识点</h3>
-      <p>数学从一年级到高中必修和选择性必修，语文从一年级到六年级，英语从三年级到高中，物理从八年级上册到高中选择性必修第三册。搜索或按册、章找到想检查的内容。</p>
+      <h3>带上自己的题</h3>
+      <p>拍照、粘贴题目，写下自己的尝试；也可以直接选择正在学的章节。图片识别后，先核对文字和公式。</p>
     </li>
     <li>
       <span class="step-no">2</span>
-      <h3>自适应答题</h3>
-      <p>先问目标本身。答错再出一道同级或更容易的题，仍然错才沿着先修往回追。</p>
+      <h3>获得帮助，再自己试</h3>
+      <p>确认想练的知识点，按需查看样题和解析。帮助下完成和独立完成分别记录，再换一道未见过的题检查。</p>
     </li>
     <li>
       <span class="step-no">3</span>
-      <h3>找到根因和学习路径</h3>
-      <p>标出薄弱根因和不稳的点，并按年级从低到高排出建议补学的顺序。</p>
+      <h3>留到以后再检查</h3>
+      <p>保存原题重做、实际作答和复查记录，自行调整提醒时间。一次答对不代替整章掌握，隔时检查另留证据。</p>
     </li>
   </ol>
 
@@ -106,11 +106,6 @@
 
   <h2 class="section-title">按年级进入</h2>
   <div class="grade-grid" id="grades" aria-busy="true"></div>
-  <a class="iq-card" href="https://test.pansgo.com/?from=math-home" target="_blank" rel="noopener">
-    <strong>🧠 儿童智商测试</strong>
-    <span class="iq-sub">找规律 · 补图案 · 空间想象</span>
-    <span class="iq-note">趣味测评，与数学诊断无关</span>
-  </a>
 </main>
 <footer class="site-footer">
   <p><a href="https://github.com/xiaoyang111222/cn-math-taxonomy/issues/new/choose">提交 Issue</a></p>

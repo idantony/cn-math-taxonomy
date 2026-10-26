@@ -4,7 +4,13 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const E = require('../diagnose/engine.js');
+// Historical v2 compatibility suite; default evidence policy is tested separately.
+const engine = require('../diagnose/engine.js');
+const E = Object.assign({}, engine, {
+  createSession: (g, t, o) => engine.createSession(g, t, Object.assign({}, o, { policy: 'legacy-v2' })),
+  replay: (g, t, a, o) => engine.replay(g, t, a, Object.assign({}, o, { policy: 'legacy-v2' }))
+});
+console.log('Legacy v2 compatibility suite (new default policy is tested in test_evidence.js)');
 
 let passed = 0;
 let failed = 0;

@@ -144,7 +144,7 @@
 
     drawLogo(ctx, 64, 56, 84);
     text(ctx, m.siteName || '中小学·高中知识图谱', 168, 64, 800, 40, '#ffffff', 820);
-    text(ctx, '诊断结果', 168, 114, 500, 26, 'rgba(255,255,255,0.86)', 820);
+    text(ctx, m.policy === 'legacy-v2' ? '旧版 v2 结果（含祖先推断）' : '本次检查不代表长期掌握', 168, 114, 500, 26, 'rgba(255,255,255,0.86)', 820);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = font(800, 56);
@@ -165,10 +165,10 @@
     ctx.restore();
 
     var stats = [
-      { n: m.mastered, label: '已掌握', fg: '#157a3a', bg: '#dcfce7' },
-      { n: m.shaky, label: '不稳', fg: '#b45309', bg: '#fef3c7' },
-      { n: m.weak, label: '薄弱', fg: '#b91c1c', bg: '#fee2e2' },
-      { n: m.untested, label: '未测', fg: '#475569', bg: '#e8eef6' }
+      { n: m.mastered, label: m.policy === 'legacy-v2' ? '旧规则掌握' : '本次通过', fg: '#157a3a', bg: '#dcfce7' },
+      { n: m.shaky, label: '需巩固', fg: '#b45309', bg: '#fef3c7' },
+      { n: m.weak, label: '本次受阻', fg: '#b91c1c', bg: '#fee2e2' },
+      { n: m.untested, label: '未验证', fg: '#475569', bg: '#e8eef6' }
     ];
     var gap = 16;
     var chipW = (cardW - 40 - gap * 3) / 4;
@@ -188,13 +188,13 @@
     ctx.textAlign = 'left';
 
     var y = statsY + statsH + 36;
-    var spotTitle = m.spotKind === 'chapter' ? '最薄弱的章节' : '最薄弱的知识点';
+    var spotTitle = m.spotKind === 'chapter' ? '本次需关注的章节' : '本次需关注的知识点';
     text(ctx, spotTitle, 64, y, 800, 34, '#162033');
     y += 52;
     var spots = Array.isArray(m.spots) ? m.spots.slice(0, 3) : [];
     if (!spots.length) {
       card(ctx, cardX, y, cardW, 88, 18);
-      text(ctx, '这次没有明显薄弱的地方', 80, y + 28, 500, 28, '#5c6d82', cardW - 64);
+      text(ctx, '本次未形成受阻或需巩固证据', 80, y + 28, 500, 28, '#5c6d82', cardW - 64);
       y += 104;
     } else {
       spots.forEach(function (spot, i) {
@@ -217,12 +217,12 @@
     }
 
     y += 8;
-    text(ctx, '最该先补的根因', 64, y, 800, 34, '#162033');
+    text(ctx, '先修检查线索', 64, y, 800, 34, '#162033');
     y += 52;
     var roots = Array.isArray(m.roots) ? m.roots.slice(0, 2) : [];
     if (!roots.length) {
       card(ctx, cardX, y, cardW, 88, 18);
-      text(ctx, '这次没有判出需要先补的根因', 80, y + 28, 500, 28, '#5c6d82', cardW - 64);
+      text(ctx, '本次没有形成先修检查线索', 80, y + 28, 500, 28, '#5c6d82', cardW - 64);
     } else {
       roots.forEach(function (name) {
         card(ctx, cardX, y, cardW, 96, 18);
